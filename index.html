@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="nl" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Skelet Trainer - 1 VWO Biologie</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts for sleek typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Fredoka', 'sans-serif'],
+          },
+          colors: {
+            cyanGlow: '#00ffcc',
+            cyanGlowDark: '#00cca3',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom SVG glow effects and animations */
+    .bone-part {
+      cursor: pointer;
+      transition: fill 0.25s ease, stroke 0.25s ease, filter 0.25s ease, opacity 0.25s ease;
+      stroke-linejoin: round;
+      stroke-linecap: round;
+    }
+
+    .bone-part:hover {
+      filter: drop-shadow(0 0 6px rgba(0, 255, 204, 0.8));
+      stroke: #00ffcc !important;
+    }
+
+    .bone-highlighted {
+      fill: #00ffcc !important;
+      stroke: #ffffff !important;
+      stroke-width: 2.5px !important;
+      filter: drop-shadow(0 0 12px #00ffcc) drop-shadow(0 0 22px rgba(0, 255, 204, 0.7)) !important;
+      animation: pulseGlow 1.6s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        filter: drop-shadow(0 0 8px #00ffcc) drop-shadow(0 0 14px rgba(0, 255, 204, 0.5));
+      }
+      100% {
+        filter: drop-shadow(0 0 18px #00ffcc) drop-shadow(0 0 30px rgba(0, 255, 204, 0.95));
+      }
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+
+    /* Glassmorphic panels */
+    .glass-card {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col selection:bg-cyan-500 selection:text-slate-950 font-sans text-slate-100 bg-slate-950">
+
+  <!-- Top Navigation Header -->
+  <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md px-4 py-3">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Title & Icon -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-emerald-500 flex items-center justify-center text-slate-950 font-display font-bold text-xl shadow-lg shadow-cyan-500/20">
+          🦴
+        </div>
+        <div>
+          <h1 class="font-display text-xl sm:text-2xl font-bold bg-gradient-to-r from-cyan-300 via-teal-200 to-emerald-300 bg-clip-text text-transparent">
+            Skelet Trainer
+          </h1>
+          <p class="text-xs text-slate-400 font-medium">1 VWO Biologie &bull; 20 Alle Sleutelbegrippen</p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800">
+        <button id="tab-quiz" onclick="switchTab('quiz')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20">
+          🎯 Quiz Modus
+        </button>
+        <button id="tab-explore" onclick="switchTab('explore')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200">
+          🔍 Skelet Verkennen
+        </button>
+        <button id="tab-scores" onclick="switchTab('scores')" class="px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200">
+          🏆 Highscores
+        </button>
+      </nav>
+
+      <!-- Audio & Info Controls -->
+      <div class="flex items-center space-x-2">
+        <button id="sound-btn" onclick="toggleSound()" class="p-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white transition-all" title="Geluid in/uitschakelen">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button onclick="openInfoModal()" class="p-2 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white transition-all" title="Uitleg & 20 Begrippen">
+          ❓
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 flex flex-col gap-6 overflow-y-auto">
+
+    <!-- Top Score & Progress Stats Bar -->
+    <section id="quiz-stats-bar" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="glass-card rounded-xl p-3 border-l-4 border-cyan-400 flex flex-col justify-center">
+        <span class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Score</span>
+        <span id="score-val" class="font-display text-2xl font-bold text-cyan-300">0</span>
+      </div>
+      <div class="glass-card rounded-xl p-3 border-l-4 border-amber-400 flex flex-col justify-center">
+        <span class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Streak 🔥</span>
+        <span id="streak-val" class="font-display text-2xl font-bold text-amber-300">0</span>
+      </div>
+      <div class="glass-card rounded-xl p-3 border-l-4 border-emerald-400 flex flex-col justify-center">
+        <span class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Beste Reeks</span>
+        <span id="best-streak-val" class="font-display text-2xl font-bold text-emerald-300">0</span>
+      </div>
+      <div class="glass-card rounded-xl p-3 border-l-4 border-purple-400 flex flex-col justify-center">
+        <span class="text-xs uppercase font-semibold text-slate-400 tracking-wider">Voortgang</span>
+        <span id="progress-val" class="font-display text-xl font-bold text-purple-300">0 / 20 Uniek</span>
+      </div>
+    </section>
+
+    <!-- Content Layout Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+      
+      <!-- LEFT COLUMN: Main Interactive Vector Skeleton SVG (6 cols) -->
+      <section class="lg:col-span-6 glass-card rounded-2xl p-4 flex flex-col items-center relative overflow-hidden border border-slate-800 shadow-2xl min-h-[580px]">
+        
+        <!-- Controls & Mode Status -->
+        <div class="w-full flex items-center justify-between mb-2 z-10">
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span id="skeleton-status-label">Centraal Menselijk Skelet (20 Botten)</span>
+          </span>
+          <div class="flex items-center space-x-1">
+            <button onclick="zoomSkeleton('in')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">🔍 +</button>
+            <button onclick="zoomSkeleton('out')" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">🔍 -</button>
+            <button onclick="resetSkeletonZoom()" class="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 transition">↺ Overzicht</button>
+          </div>
+        </div>
+
+        <!-- SVG Skeleton Frame -->
+        <div class="w-full h-[520px] flex items-center justify-center relative select-none">
+          <svg id="skeleton-svg" viewBox="0 0 400 900" class="w-full h-full max-h-[520px] transition-all duration-700 ease-out">
+            
+            <defs>
+              <radialGradient id="bg-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#00ffcc"/>
+                <stop offset="100%" stop-color="#0f172a" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- Background subtle glow -->
+            <ellipse cx="200" cy="450" rx="170" ry="420" fill="url(#bg-glow)" opacity="0.12" />
+
+            <!-- 1. Schedel (Skull) -->
+            <g id="bone-schedel" class="bone-part" onclick="handleBoneClick('schedel')">
+              <path d="M 160,50 C 160,20 240,20 240,50 C 245,75 235,95 220,100 L 180,100 C 165,95 155,75 160,50 Z" fill="#334155" stroke="#cbd5e1" stroke-width="2"/>
+              <circle cx="180" cy="55" r="7" fill="#0f172a"/>
+              <circle cx="220" cy="55" r="7" fill="#0f172a"/>
+              <path d="M 196,68 L 200,60 L 204,68 Z" fill="#0f172a"/>
+              <path d="M 172,95 L 175,110 L 225,110 L 228,95 Z" fill="#334155" stroke="#cbd5e1" stroke-width="1.5"/>
+            </g>
+
+            <!-- 14. Halswervels (Cervical Vertebrae - Neck Spine) -->
+            <g id="bone-halswervels" class="bone-part" onclick="handleBoneClick('halswervels')">
+              <rect x="188" y="112" width="24" height="6" rx="2" fill="#475569" stroke="#38bdf8" stroke-width="1.5"/>
+              <rect x="187" y="119" width="26" height="6" rx="2" fill="#475569" stroke="#38bdf8" stroke-width="1.5"/>
+              <rect x="186" y="126" width="28" height="6" rx="2" fill="#475569" stroke="#38bdf8" stroke-width="1.5"/>
+              <rect x="186" y="133" width="28" height="6" rx="2" fill="#475569" stroke="#38bdf8" stroke-width="1.5"/>
+            </g>
+
+            <!-- 11. Sleutelbeen (Clavicle) -->
+            <g id="bone-sleutelbeen" class="bone-part" onclick="handleBoneClick('sleutelbeen')">
+              <path d="M 198,142 C 170,138 140,145 125,148" fill="none" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round"/>
+              <path d="M 202,142 C 230,138 260,145 275,148" fill="none" stroke="#e2e8f0" stroke-width="4.5" stroke-linecap="round"/>
+            </g>
+
+            <!-- 13. Schouderblad (Scapula) -->
+            <g id="bone-schouderblad" class="bone-part" onclick="handleBoneClick('schouderblad')">
+              <path d="M 125,152 L 150,155 L 140,195 Z" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+              <path d="M 275,152 L 250,155 L 260,195 Z" fill="#334155" stroke="#94a3b8" stroke-width="1.5"/>
+            </g>
+
+            <!-- 15. Borstwervels (Thoracic Vertebrae - Back Spine) -->
+            <g id="bone-borstwervels" class="bone-part" onclick="handleBoneClick('borstwervels')">
+              <rect x="188" y="142" width="24" height="110" rx="3" fill="#334155" stroke="#34d399" stroke-width="2"/>
+              <line x1="188" y1="160" x2="212" y2="160" stroke="#34d399" stroke-width="1.5"/>
+              <line x1="188" y1="180" x2="212" y2="180" stroke="#34d399" stroke-width="1.5"/>
+              <line x1="188" y1="200" x2="212" y2="200" stroke="#34d399" stroke-width="1.5"/>
+              <line x1="188" y1="220" x2="212" y2="220" stroke="#34d399" stroke-width="1.5"/>
+              <line x1="188" y1="240" x2="212" y2="240" stroke="#34d399" stroke-width="1.5"/>
+            </g>
+
+            <!-- 12. Ribben (Ribs) -->
+            <g id="bone-ribben" class="bone-part" onclick="handleBoneClick('ribben')">
+              <path d="M 195,155 C 150,150 130,170 190,180" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+              <path d="M 205,155 C 250,150 270,170 210,180" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+
+              <path d="M 195,170 C 140,165 120,190 190,200" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+              <path d="M 205,170 C 260,165 280,190 210,200" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+
+              <path d="M 195,185 C 135,180 115,210 190,220" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+              <path d="M 205,185 C 265,180 285,210 210,220" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+
+              <path d="M 195,200 C 135,200 120,230 190,240" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+              <path d="M 205,200 C 265,200 280,230 210,240" fill="none" stroke="#cbd5e1" stroke-width="2.5"/>
+
+              <path d="M 195,215 C 140,215 130,245 190,252" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+              <path d="M 205,215 C 260,215 270,245 210,252" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+            </g>
+
+            <!-- 2. Borstbeen (Sternum) -->
+            <g id="bone-borstbeen" class="bone-part" onclick="handleBoneClick('borstbeen')">
+              <path d="M 194,145 L 206,145 L 204,225 L 200,235 L 196,225 Z" fill="#f8fafc" stroke="#475569" stroke-width="1.5"/>
+            </g>
+
+            <!-- 3. Opperarmbeen (Humerus) -->
+            <g id="bone-opperarmbeen" class="bone-part" onclick="handleBoneClick('opperarmbeen')">
+              <path d="M 120,158 C 112,165 102,210 100,260 C 102,268 112,268 114,260 L 123,165 Z" fill="#cbd5e1" stroke="#334155" stroke-width="1.5"/>
+              <path d="M 280,158 C 288,165 298,210 300,260 C 298,268 288,268 286,260 L 277,165 Z" fill="#cbd5e1" stroke="#334155" stroke-width="1.5"/>
+            </g>
+
+            <!-- 4. Ellepijp (Ulna - Pink side) -->
+            <g id="bone-ellepijp" class="bone-part" onclick="handleBoneClick('ellepijp')">
+              <path d="M 112,268 L 110,360 L 105,360 L 106,268 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+              <path d="M 288,268 L 290,360 L 295,360 L 294,268 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+
+            <!-- 5. Spaakbeen (Radius - Thumb side) -->
+            <g id="bone-spaakbeen" class="bone-part" onclick="handleBoneClick('spaakbeen')">
+              <path d="M 102,268 L 94,358 L 100,360 L 107,268 Z" fill="#cbd5e1" stroke="#1e293b" stroke-width="1.5"/>
+              <path d="M 298,268 L 306,358 L 300,360 L 293,268 Z" fill="#cbd5e1" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+
+            <!-- 20. Middenhandsbeentjes (Metacarpals) -->
+            <g id="bone-middenhandsbeentjes" class="bone-part" onclick="handleBoneClick('middenhandsbeentjes')">
+              <path d="M 92,365 L 112,365 L 114,390 L 88,390 Z" fill="#64748b" stroke="#cbd5e1" stroke-width="1.5"/>
+              <path d="M 308,365 L 288,365 L 286,390 L 312,390 Z" fill="#64748b" stroke="#cbd5e1" stroke-width="1.5"/>
+            </g>
+
+            <!-- 19. Vingerkootjes (Phalanges) -->
+            <g id="bone-vingerkootjes" class="bone-part" onclick="handleBoneClick('vingerkootjes')">
+              <path d="M 88,392 L 85,420 M 93,392 L 92,425 M 99,392 L 100,427 M 106,392 L 108,424 M 112,392 L 115,415" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+              <path d="M 312,392 L 315,420 M 307,392 L 308,425 M 301,392 L 300,427 M 294,392 L 292,424 M 288,392 L 285,415" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+            </g>
+
+            <!-- 16. Lendewervels (Lumbar Vertebrae - Lower Back Spine) -->
+            <g id="bone-lendewervels" class="bone-part" onclick="handleBoneClick('lendewervels')">
+              <rect x="186" y="255" width="28" height="12" rx="3" fill="#475569" stroke="#fbbf24" stroke-width="2"/>
+              <rect x="185" y="270" width="30" height="12" rx="3" fill="#475569" stroke="#fbbf24" stroke-width="2"/>
+              <rect x="184" y="285" width="32" height="13" rx="3" fill="#475569" stroke="#fbbf24" stroke-width="2"/>
+              <rect x="183" y="301" width="34" height="14" rx="3" fill="#475569" stroke="#fbbf24" stroke-width="2"/>
+            </g>
+
+            <!-- 6. Heupbeen (Pelvis) -->
+            <g id="bone-heupbeen" class="bone-part" onclick="handleBoneClick('heupbeen')">
+              <path d="M 183,318 C 140,310 130,340 145,380 C 160,395 175,385 180,360 Z" fill="#334155" stroke="#cbd5e1" stroke-width="2"/>
+              <path d="M 217,318 C 260,310 270,340 255,380 C 240,395 225,385 220,360 Z" fill="#334155" stroke="#cbd5e1" stroke-width="2"/>
+            </g>
+
+            <!-- 17. Heiligbeen (Sacrum - Fused Pelvic Spine) -->
+            <g id="bone-heiligbeen" class="bone-part" onclick="handleBoneClick('heiligbeen')">
+              <path d="M 183,318 L 217,318 L 210,365 L 190,365 Z" fill="#64748b" stroke="#f97316" stroke-width="2"/>
+              <line x1="185" y1="330" x2="215" y2="330" stroke="#f97316" stroke-width="1.5"/>
+              <line x1="187" y1="342" x2="213" y2="342" stroke="#f97316" stroke-width="1.5"/>
+              <line x1="189" y1="354" x2="211" y2="354" stroke="#f97316" stroke-width="1.5"/>
+            </g>
+
+            <!-- 18. Staartbeen (Coccyx - Tailbone Tip) -->
+            <g id="bone-staartbeen" class="bone-part" onclick="handleBoneClick('staartbeen')">
+              <path d="M 192,366 L 208,366 L 203,388 L 197,388 Z" fill="#f43f5e" stroke="#ffffff" stroke-width="2"/>
+            </g>
+
+            <!-- 7. Dijbeen (Femur) -->
+            <g id="bone-dijbeen" class="bone-part" onclick="handleBoneClick('dijbeen')">
+              <path d="M 152,382 C 145,390 162,480 160,575 C 168,582 178,582 176,575 C 172,480 168,390 162,382 Z" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>
+              <path d="M 248,382 C 255,390 238,480 240,575 C 232,582 222,582 224,575 C 228,480 232,390 238,382 Z" fill="#cbd5e1" stroke="#334155" stroke-width="2"/>
+            </g>
+
+            <!-- 8. Knieschijf (Patella) -->
+            <g id="bone-knieschijf" class="bone-part" onclick="handleBoneClick('knieschijf')">
+              <circle cx="167" cy="580" r="9" fill="#f8fafc" stroke="#0284c7" stroke-width="2.5"/>
+              <circle cx="233" cy="580" r="9" fill="#f8fafc" stroke="#0284c7" stroke-width="2.5"/>
+            </g>
+
+            <!-- 9. Scheenbeen (Tibia - Thick shin) -->
+            <g id="bone-scheenbeen" class="bone-part" onclick="handleBoneClick('scheenbeen')">
+              <path d="M 160,592 L 175,592 L 172,760 L 163,760 Z" fill="#e2e8f0" stroke="#1e293b" stroke-width="2"/>
+              <path d="M 240,592 L 225,592 L 228,760 L 237,760 Z" fill="#e2e8f0" stroke="#1e293b" stroke-width="2"/>
+            </g>
+
+            <!-- 10. Kuitbeen (Fibula - Outer calf) -->
+            <g id="bone-kuitbeen" class="bone-part" onclick="handleBoneClick('kuitbeen')">
+              <path d="M 155,598 L 158,598 L 158,758 L 154,758 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+              <path d="M 245,598 L 242,598 L 242,758 L 246,758 Z" fill="#94a3b8" stroke="#1e293b" stroke-width="1.5"/>
+            </g>
+
+          </svg>
+        </div>
+
+        <p class="text-xs text-slate-400 mt-2 text-center">
+          💡 <span id="hint-text">In Quiz Modus zoomt het skelet automatisch in op het juiste bot.</span>
+        </p>
+      </section>
+
+      <!-- RIGHT COLUMN: Dynamic Quiz & Exploration Box (6 cols) -->
+      <section class="lg:col-span-6 flex flex-col gap-6">
+
+        <!-- QUIZ INTERACTION CARD -->
+        <div id="quiz-card" class="glass-card rounded-2xl p-5 border border-slate-800 shadow-xl flex flex-col gap-5">
+          
+          <!-- Question Title -->
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <span class="text-xs uppercase font-bold text-cyan-400 tracking-wider">Vraag Mechaniek</span>
+              <h2 class="font-display text-lg sm:text-xl font-bold text-white mt-0.5">
+                Welk bot is groen/blauw verlicht?
+              </h2>
+            </div>
+            <span class="px-2.5 py-1 rounded-md bg-cyan-950 border border-cyan-800 text-cyan-300 text-xs font-semibold">
+              4 Keuzes
+            </span>
+          </div>
+
+          <!-- Multiple Choice Options Grid (4 options) -->
+          <div id="quiz-options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <!-- Buttons dynamically generated by JS -->
+          </div>
+
+          <!-- Feedback & Explanation Box -->
+          <div id="feedback-box" class="hidden p-4 rounded-xl border transition-all duration-300">
+            <div class="flex items-start space-x-3">
+              <span id="feedback-icon" class="text-2xl"></span>
+              <div class="flex-1">
+                <h4 id="feedback-title" class="font-display font-bold text-base"></h4>
+                <p id="feedback-body" class="text-xs sm:text-sm mt-1 leading-relaxed text-slate-200"></p>
+                <div id="feedback-ezelbrug" class="mt-2.5 p-2.5 rounded-lg bg-slate-950/80 border border-slate-800 text-xs text-amber-300 flex items-start space-x-2">
+                  <span>💡</span>
+                  <div>
+                    <strong class="font-semibold text-amber-200">Onthoudtip (Ezelbrug):</strong>
+                    <span id="ezelbrug-text" class="block text-slate-300 mt-0.5"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Next Question Button -->
+          <button id="next-btn" onclick="generateNextQuestion()" class="w-full py-3.5 px-4 rounded-xl font-display font-bold text-slate-950 bg-gradient-to-r from-cyan-400 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 shadow-lg shadow-cyan-500/20 transition-all transform active:scale-[0.99] flex items-center justify-center space-x-2">
+            <span>Volgende Vraag</span>
+            <span class="text-lg">➔</span>
+          </button>
+
+        </div>
+
+        <!-- EXPLORE / VERKENNEN CARD -->
+        <div id="explore-card" class="hidden glass-card rounded-2xl p-5 border border-slate-800 shadow-xl flex-col gap-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div>
+              <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider">Anatomische Details</span>
+              <h3 id="explore-title" class="font-display font-bold text-xl text-cyan-300 mt-0.5">
+                Selecteer een bot op het skelet
+              </h3>
+            </div>
+            <span id="explore-category" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+              Biologie 1 VWO
+            </span>
+          </div>
+          <p id="explore-description" class="text-sm text-slate-300 leading-relaxed">
+            Klik op een willekeurig bot of wervelkolomdeel op het skelet om de officiële Nederlandse benaming, locatie en ezelbruggetjes te bekijken!
+          </p>
+          <div id="explore-tip-box" class="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 flex items-start space-x-2">
+            <span class="text-base">💡</span>
+            <div>
+              <strong class="font-semibold text-amber-300">Onthoudtip (Ezelbruggetje):</strong>
+              <p id="explore-tip-text" class="text-slate-300 mt-0.5">Klik op een bot om de tip te lezen.</p>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Highscores Modal -->
+  <div id="scores-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-slate-800 shadow-2xl relative">
+      <button onclick="closeModal('scores-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+      <div class="flex items-center space-x-3 mb-4">
+        <span class="text-2xl">🏆</span>
+        <h2 class="font-display font-bold text-xl text-cyan-300">Highscores & Prestaties</h2>
+      </div>
+      
+      <div class="space-y-3">
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+          <span class="text-sm text-slate-300">Hoogste Score</span>
+          <span id="hs-score" class="font-display font-bold text-lg text-cyan-400">0 pt</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+          <span class="text-sm text-slate-300">Langste Reeks (Streak) 🔥</span>
+          <span id="hs-streak" class="font-display font-bold text-lg text-amber-400">0 vragen</span>
+        </div>
+        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+          <span class="text-sm text-slate-300">Totaal Beantwoord</span>
+          <span id="hs-total" class="font-display font-bold text-lg text-purple-400">0</span>
+        </div>
+      </div>
+
+      <button onclick="resetHighscores()" class="w-full mt-5 py-2 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs font-semibold transition">
+        Reset Statistieken
+      </button>
+    </div>
+  </div>
+
+  <!-- Begrippenlijst Info Modal -->
+  <div id="info-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+      <button onclick="closeModal('info-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+      <h2 class="font-display font-bold text-xl text-cyan-300 mb-2">Alle 20 Begrippen (1 VWO)</h2>
+      <p class="text-xs text-slate-300 leading-relaxed mb-4">
+        Alle 20 verplichte botten staan direct op het centrale hoofdskelet getekend:
+      </p>
+      
+      <ol class="list-decimal list-inside text-xs text-slate-300 space-y-1 font-mono">
+        <li>Schedel</li>
+        <li>Borstbeen</li>
+        <li>Opperarmbeen</li>
+        <li>Ellepijp</li>
+        <li>Spaakbeen</li>
+        <li>Heupbeen</li>
+        <li>Dijbeen</li>
+        <li>Knieschijf</li>
+        <li>Scheenbeen</li>
+        <li>Kuitbeen</li>
+        <li>Sleutelbeen</li>
+        <li>Ribben</li>
+        <li>Schouderblad</li>
+        <li>Halswervels (Nekwervels)</li>
+        <li>Borstwervels (Rugwervels bij ribben)</li>
+        <li>Lendewervels (Onderrugwervels)</li>
+        <li>Heiligbeen (Vergroeid in bekken)</li>
+        <li>Staartbeen (Puntje onderaan wervelkolom)</li>
+        <li>Vingerkootjes</li>
+        <li>Middenhandsbeentjes</li>
+      </ol>
+      <button onclick="closeModal('info-modal')" class="w-full mt-5 py-2.5 px-4 rounded-xl bg-cyan-500 text-slate-950 font-display font-bold text-sm">
+        Begrepen & Starten
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* BONE DATABASE - Exact 20 Bones for 1 VWO Biologie */
+    const BONE_DATA = [
+      {
+        id: "schedel",
+        name: "Schedel",
+        category: "Hoofd",
+        viewBox: "100 10 200 160",
+        description: "De schedel beschermt de hersenen en geeft vorm aan het gezicht.",
+        tip: "Beschermt je brein tegen stoten!"
+      },
+      {
+        id: "borstbeen",
+        name: "Borstbeen",
+        category: "Romp",
+        viewBox: "120 120 160 140",
+        description: "Het borstbeen is een plat bot aan de voorkant van de borstkas waar de ribben aan vastzitten.",
+        tip: "Zit precies in het midden van je borstkas."
+      },
+      {
+        id: "opperarmbeen",
+        name: "Opperarmbeen",
+        category: "Armen",
+        viewBox: "60 140 280 180",
+        description: "Het opperarmbeen is het grote, stevige bot in je bovenarm.",
+        tip: "Het 'opper'-bot in je arm, oftewel je bovenarm!"
+      },
+      {
+        id: "ellepijp",
+        name: "Ellepijp",
+        category: "Armen",
+        viewBox: "50 250 140 160",
+        description: "De ellepijp ligt in de onderarm aan de kant van de pink.",
+        tip: "Ellepijp zit aan de kant van de PINK (P/L-klank)!"
+      },
+      {
+        id: "spaakbeen",
+        name: "Spaakbeen",
+        category: "Armen",
+        viewBox: "50 250 140 160",
+        description: "Het spaakbeen ligt in de onderarm aan de kant van de duim en draait om de ellepijp.",
+        tip: "Spaakbeen draait met de DUIM OMHOOG (duimhoog)!"
+      },
+      {
+        id: "heupbeen",
+        name: "Heupbeen",
+        category: "Bekken",
+        viewBox: "100 300 200 140",
+        description: "Het heupbeen vormt samen met het heiligbeen de bekkengordel.",
+        tip: "Draagt je bovenlichaam en verbindt je benen."
+      },
+      {
+        id: "dijbeen",
+        name: "Dijbeen",
+        category: "Benen",
+        viewBox: "110 390 180 230",
+        description: "Het dijbeen is het langste, zwaarste en sterkste bot in het menselijk lichaam.",
+        tip: "Langste bot van je lichaam in je bovenbeen!"
+      },
+      {
+        id: "knieschijf",
+        name: "Knieschijf",
+        category: "Benen",
+        viewBox: "130 540 140 100",
+        description: "De knieschijf is een plat zwevend botje dat het kniegewricht beschermt.",
+        tip: "Een ronde platte 'schijf' op je knie."
+      },
+      {
+        id: "scheenbeen",
+        name: "Scheenbeen",
+        category: "Benen",
+        viewBox: "120 580 160 210",
+        description: "Het scheenbeen is het dikke bot aan de voorkant/binnenkant van je onderbeen.",
+        tip: "Het dikke bot aan de voorkant (waar je je scheen stoot)."
+      },
+      {
+        id: "kuitbeen",
+        name: "Kuitbeen",
+        category: "Benen",
+        viewBox: "120 580 160 210",
+        description: "Het kuitbeen is het dunne bot aan de buitenkant van je onderbeen.",
+        tip: "Dun bot aan de buitenkant van je onderbeen!"
+      },
+      {
+        id: "sleutelbeen",
+        name: "Sleutelbeen",
+        category: "Schoudergordel",
+        viewBox: "100 110 200 80",
+        description: "Het sleutelbeen verbindt het borstbeen met het schouderblad.",
+        tip: "Lijkt op een sleutel boven op je borstkas!"
+      },
+      {
+        id: "ribben",
+        name: "Ribben",
+        category: "Romp",
+        viewBox: "90 130 220 160",
+        description: "De ribben vormen de borstkas die hart en longen beschermt.",
+        tip: "Vormen de beschermende kooi rond je hart en longen."
+      },
+      {
+        id: "schouderblad",
+        name: "Schouderblad",
+        category: "Schoudergordel",
+        viewBox: "100 130 200 100",
+        description: "Het schouderblad is een plat driehoekig bot aan de achterkant van de schouder.",
+        tip: "Platte driehoekige 'bladen' op je rug."
+      },
+      {
+        id: "halswervels",
+        name: "Halswervels",
+        category: "Wervelkolom",
+        viewBox: "130 90 140 100",
+        description: "De 7 halswervels in je nek dragen het hoofd en zorgen dat je je nek kunt draaien.",
+        tip: "De 7 bovenste wervels in je nek!"
+      },
+      {
+        id: "borstwervels",
+        name: "Borstwervels",
+        category: "Wervelkolom",
+        viewBox: "130 140 140 150",
+        description: "De 12 borstwervels waar de ribben aan vastzitten.",
+        tip: "De 12 middelste wervels op borsthoogte!"
+      },
+      {
+        id: "lendewervels",
+        name: "Lendewervels",
+        category: "Wervelkolom",
+        viewBox: "120 250 160 110",
+        description: "De 5 lendewervels in de onderrug. Extra dik om je lichaamsgewicht te dragen.",
+        tip: "5 hele stevige, dikke wervels in je onderrug!"
+      },
+      {
+        id: "heiligbeen",
+        name: "Heiligbeen",
+        category: "Wervelkolom / Bekken",
+        viewBox: "130 310 140 100",
+        description: "Het heiligbeen bestaat uit 5 aan elkaar gegroeide wervels tussen de heupbeenderen.",
+        tip: "Driehoekig vergroeid bot midden in je bekken!"
+      },
+      {
+        id: "staartbeen",
+        name: "Staartbeen",
+        category: "Wervelkolom",
+        viewBox: "140 350 120 80",
+        description: "Het staartbeen is het onderste puntje van de wervelkolom.",
+        tip: "Het allersonderste puntje van je wervelkolom!"
+      },
+      {
+        id: "vingerkootjes",
+        name: "Vingerkootjes",
+        category: "Handen",
+        viewBox: "40 360 120 120",
+        description: "De kleine botjes in de vingers van je hand.",
+        tip: "De kleine kootjes waarmee je typt en grijpt!"
+      },
+      {
+        id: "middenhandsbeentjes",
+        name: "Middenhandsbeentjes",
+        category: "Handen",
+        viewBox: "40 340 120 120",
+        description: "De 5 botjes in het midden van de handpalm, tussen de pols en vingers.",
+        tip: "Zitten midden in de palm van je hand!"
+      }
+    ];
+
+    /* APP STATE */
+    let currentTab = 'quiz';
+    let currentQuestionTarget = null;
+    let score = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let answeredBones = new Set();
+    let isSoundMuted = false;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playSound(type) {
+      if (isSoundMuted) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      const now = audioCtx.currentTime;
+
+      if (type === 'correct') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.exponentialRampToValueAtTime(880, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'click') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      }
+    }
+
+    function toggleSound() {
+      isSoundMuted = !isSoundMuted;
+      document.getElementById('sound-icon').innerText = isSoundMuted ? '🔇' : '🔊';
+    }
+
+    /* SVG HIGHLIGHT & ZOOM LOGIC */
+    function highlightBoneOnSvg(boneId) {
+      // Clear previous highlights
+      document.querySelectorAll('#skeleton-svg .bone-part').forEach(el => {
+        el.classList.remove('bone-highlighted');
+      });
+
+      // Highlight target bone
+      const boneEl = document.getElementById(`bone-${boneId}`);
+      if (boneEl) {
+        boneEl.classList.add('bone-highlighted');
+      }
+
+      // Auto zoom camera to target bone
+      const boneData = BONE_DATA.find(b => b.id === boneId);
+      if (boneData) {
+        const svg = document.getElementById('skeleton-svg');
+        svg.setAttribute('viewBox', boneData.viewBox);
+      }
+    }
+
+    function zoomSkeleton(direction) {
+      const svg = document.getElementById('skeleton-svg');
+      let currentVB = svg.getAttribute('viewBox').split(' ').map(Number);
+      let factor = direction === 'in' ? 0.8 : 1.25;
+
+      let newW = currentVB[2] * factor;
+      let newH = currentVB[3] * factor;
+      let newX = currentVB[0] + (currentVB[2] - newW) / 2;
+      let newY = currentVB[1] + (currentVB[3] - newH) / 2;
+
+      svg.setAttribute('viewBox', `${newX} ${newY} ${newW} ${newH}`);
+      playSound('click');
+    }
+
+    function resetSkeletonZoom() {
+      const svg = document.getElementById('skeleton-svg');
+      svg.setAttribute('viewBox', '0 0 400 900');
+      playSound('click');
+    }
+
+    /* QUIZ ENGINE */
+    function generateNextQuestion() {
+      playSound('click');
+
+      const feedbackBox = document.getElementById('feedback-box');
+      feedbackBox.classList.add('hidden');
+
+      // Pick question target
+      let remainingBones = BONE_DATA.filter(b => !answeredBones.has(b.id));
+      if (remainingBones.length === 0) {
+        answeredBones.clear();
+        remainingBones = BONE_DATA;
+      }
+
+      currentQuestionTarget = remainingBones[Math.floor(Math.random() * remainingBones.length)];
+
+      // Auto zoom and highlight target on SVG
+      highlightBoneOnSvg(currentQuestionTarget.id);
+
+      // Generate 4 MC choices
+      let distractors = BONE_DATA.filter(b => b.id !== currentQuestionTarget.id);
+      distractors.sort(() => 0.5 - Math.random());
+      let options = [currentQuestionTarget, distractors[0], distractors[1], distractors[2]];
+      options.sort(() => 0.5 - Math.random());
+
+      // Render 4 option buttons
+      const container = document.getElementById('quiz-options-container');
+      container.innerHTML = '';
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = "w-full py-3.5 px-4 rounded-xl font-display font-semibold text-slate-100 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 hover:border-cyan-400/60 shadow-md transition-all text-left flex items-center justify-between group active:scale-[0.98]";
+        btn.innerHTML = `
+          <span>${opt.name}</span>
+          <span class="w-6 h-6 rounded-full border border-slate-700 group-hover:border-cyan-400 flex items-center justify-center text-xs text-slate-400 group-hover:text-cyan-300">➜</span>
+        `;
+        btn.onclick = () => checkAnswer(opt.id, btn);
+        container.appendChild(btn);
+      });
+
+      document.getElementById('next-btn').disabled = true;
+      document.getElementById('next-btn').classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    function checkAnswer(selectedId, btnElement) {
+      const allOptionBtns = document.querySelectorAll('#quiz-options-container button');
+      allOptionBtns.forEach(b => b.disabled = true);
+
+      const isCorrect = selectedId === currentQuestionTarget.id;
+      const feedbackBox = document.getElementById('feedback-box');
+      const feedbackIcon = document.getElementById('feedback-icon');
+      const feedbackTitle = document.getElementById('feedback-title');
+      const feedbackBody = document.getElementById('feedback-body');
+      const ezelbrugText = document.getElementById('ezelbrug-text');
+
+      feedbackBox.classList.remove('hidden');
+
+      if (isCorrect) {
+        playSound('correct');
+        score += 10 + (streak * 2);
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        answeredBones.add(currentQuestionTarget.id);
+
+        btnElement.classList.remove('bg-slate-900', 'border-slate-700/80');
+        btnElement.classList.add('bg-emerald-500/20', 'border-emerald-400', 'text-emerald-200');
+
+        feedbackBox.className = "p-4 rounded-xl border bg-emerald-500/10 border-emerald-500/40 text-emerald-100";
+        feedbackIcon.innerText = "✅";
+        feedbackTitle.innerText = "Helemaal goed!";
+        feedbackBody.innerText = `${currentQuestionTarget.name}: ${currentQuestionTarget.description}`;
+        ezelbrugText.innerText = currentQuestionTarget.tip;
+
+      } else {
+        playSound('wrong');
+        streak = 0;
+
+        btnElement.classList.remove('bg-slate-900', 'border-slate-700/80');
+        btnElement.classList.add('bg-rose-500/20', 'border-rose-400', 'text-rose-200');
+
+        allOptionBtns.forEach(b => {
+          if (b.innerText.includes(currentQuestionTarget.name)) {
+            b.classList.add('bg-emerald-500/20', 'border-emerald-400', 'text-emerald-200');
+          }
+        });
+
+        feedbackBox.className = "p-4 rounded-xl border bg-rose-500/10 border-rose-500/40 text-rose-100";
+        feedbackIcon.innerText = "❌";
+        feedbackTitle.innerText = `Helaas! Dit was de ${currentQuestionTarget.name}.`;
+        feedbackBody.innerText = currentQuestionTarget.description;
+        ezelbrugText.innerText = currentQuestionTarget.tip;
+      }
+
+      document.getElementById('score-val').innerText = score;
+      document.getElementById('streak-val').innerText = streak;
+      document.getElementById('best-streak-val').innerText = bestStreak;
+      document.getElementById('progress-val').innerText = `${answeredBones.size} / 20 Uniek`;
+
+      saveHighscores();
+
+      const nextBtn = document.getElementById('next-btn');
+      nextBtn.disabled = false;
+      nextBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+
+    /* EXPLORE & TAB LOGIC */
+    function handleBoneClick(boneId) {
+      playSound('click');
+      highlightBoneOnSvg(boneId);
+
+      const boneData = BONE_DATA.find(b => b.id === boneId);
+      if (!boneData) return;
+
+      document.getElementById('explore-title').innerText = boneData.name;
+      document.getElementById('explore-category').innerText = boneData.category;
+      document.getElementById('explore-description').innerText = boneData.description;
+      document.getElementById('explore-tip-text').innerText = boneData.tip;
+
+      if (currentTab === 'explore') {
+        document.getElementById('explore-card').classList.remove('hidden');
+        document.getElementById('explore-card').classList.add('flex');
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      playSound('click');
+
+      ['quiz', 'explore', 'scores'].forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.className = "px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20";
+        } else {
+          btn.className = "px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-all duration-200";
+        }
+      });
+
+      const quizCard = document.getElementById('quiz-card');
+      const exploreCard = document.getElementById('explore-card');
+      const skeletonStatusLabel = document.getElementById('skeleton-status-label');
+      const hintText = document.getElementById('hint-text');
+
+      if (tab === 'quiz') {
+        quizCard.classList.remove('hidden');
+        exploreCard.classList.add('hidden');
+        exploreCard.classList.remove('flex');
+        skeletonStatusLabel.innerText = "Quiz Modus";
+        hintText.innerText = "Kijk naar het verlichte bot en kies het juiste antwoord.";
+        if (!currentQuestionTarget) generateNextQuestion();
+      } else if (tab === 'explore') {
+        quizCard.classList.add('hidden');
+        exploreCard.classList.remove('hidden');
+        exploreCard.classList.add('flex');
+        skeletonStatusLabel.innerText = "Skelet Verkennen";
+        hintText.innerText = "Klik op een willekeurig bot om de naam en onthoudtip te bekijken.";
+      } else if (tab === 'scores') {
+        openHighscoreModal();
+      }
+    }
+
+    function openHighscoreModal() {
+      document.getElementById('hs-score').innerText = `${score} pt`;
+      document.getElementById('hs-streak').innerText = `${bestStreak} vragen`;
+      let totalAsked = parseInt(localStorage.getItem('skelet_total_asked') || '0');
+      document.getElementById('hs-total').innerText = totalAsked;
+      document.getElementById('scores-modal').classList.remove('hidden');
+    }
+
+    function openInfoModal() {
+      playSound('click');
+      document.getElementById('info-modal').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      playSound('click');
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function saveHighscores() {
+      let savedScore = parseInt(localStorage.getItem('skelet_hs_score') || '0');
+      let savedStreak = parseInt(localStorage.getItem('skelet_hs_streak') || '0');
+      let totalAsked = parseInt(localStorage.getItem('skelet_total_asked') || '0') + 1;
+
+      if (score > savedScore) localStorage.setItem('skelet_hs_score', score);
+      if (bestStreak > savedStreak) localStorage.setItem('skelet_hs_streak', bestStreak);
+      localStorage.setItem('skelet_total_asked', totalAsked);
+    }
+
+    function resetHighscores() {
+      localStorage.removeItem('skelet_hs_score');
+      localStorage.removeItem('skelet_hs_streak');
+      localStorage.removeItem('skelet_total_asked');
+      score = 0;
+      streak = 0;
+      bestStreak = 0;
+      document.getElementById('score-val').innerText = 0;
+      document.getElementById('streak-val').innerText = 0;
+      document.getElementById('best-streak-val').innerText = 0;
+      closeModal('scores-modal');
+    }
+
+    window.onload = function() {
+      let savedStreak = parseInt(localStorage.getItem('skelet_hs_streak') || '0');
+      bestStreak = savedStreak;
+      document.getElementById('best-streak-val').innerText = bestStreak;
+      generateNextQuestion();
+    };
+  </script>
+</body>
+</html>
